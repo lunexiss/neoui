@@ -1,0 +1,9 @@
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\DLLs\neoui.dll
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\DLLs\neoui.pdb
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.csproj.AssemblyReference.cache
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.AssemblyInfoInputs.cache
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.AssemblyInfo.cs
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.csproj.CoreCompileInputs.cache
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.dll
+C:\Users\Админ\OneDrive\Документы\Projects\neoui\neoui\CefSharp\obj\Debug\neoui.pdb
