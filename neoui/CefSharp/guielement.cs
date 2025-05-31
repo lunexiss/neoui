@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace GuiBackend {
     public enum ImageScalingMode
@@ -40,10 +41,17 @@ namespace GuiBackend {
 
         public void SetOnClick(Action callback)
         {
-            if (Control is Button btn)
-            {
-                btn.Click += (s, e) => callback();
-            }
+            Control.Click += (s, e) => callback();
+        }
+        
+        public void SetOnHover(Action callback)
+        {
+            Control.MouseHover += (s, e) => callback();
+        }
+
+        public void SetOnHoverLeave(Action callback)
+        {
+            Control.MouseLeave += (s, e) => callback();
         }
 
         public void ApplyStyle(string styleString)
@@ -61,7 +69,113 @@ namespace GuiBackend {
                 {
                     case "background":
                     case "background-color":
-                        if (value.StartsWith("rgba"))
+                        if (value.StartsWith("linear-gradient("))
+                        {
+                            var gradientValue = value.Substring("linear-gradient(".Length);
+                            gradientValue = gradientValue.TrimEnd(')');
+
+                            var parts = gradientValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                            float angle = 0f;
+                            int colorStartIndex = 0;
+
+                            if (parts[0].Trim().EndsWith("deg"))
+                            {
+                                var angleStr = parts[0].Trim().Replace("deg", "");
+                                float.TryParse(angleStr, out angle);
+                                colorStartIndex = 1;
+                            }
+
+                            List<Color> gradientColors = new List<Color>();
+                            for (int i = colorStartIndex; i < parts.Length; i++)
+                            {
+                                string c = parts[i].Trim();
+                                try
+                                {
+                                    gradientColors.Add(ColorTranslator.FromHtml(c));
+                                }
+                                catch
+                                {
+                                    if (c == "red") gradientColors.Add(Color.Red);
+                                    else if (c == "green") gradientColors.Add(Color.Green);
+                                    else if (c == "blue") gradientColors.Add(Color.Blue);
+                                    else if (c == "yellow") gradientColors.Add(Color.Yellow);
+                                    else gradientColors.Add(Color.Black);
+                                }
+                            }
+
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Paint += Control_Paint_Gradient;
+
+                            Control.Tag = new GradientData
+                            {
+                                Angle = angle,
+                                Colors = gradientColors.ToArray()
+                            };
+
+                            Control.Invalidate();
+                        }
+                        else if (value.StartsWith("rgba"))
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            var parts = value.Replace("rgba(", "").Replace(")", "").Split(',');
+                            int r = int.Parse(parts[0]);
+                            int g = int.Parse(parts[1]);
+                            int b = int.Parse(parts[2]);
+                            float alpha = float.Parse(parts[3], CultureInfo.InvariantCulture); // 0.0 to 1.0
+                            int a = (int)(alpha * 255); // convert to 0-255
+                            Control.BackColor = Color.FromArgb(a, r, g, b);
+                        }
+                        else if (value.StartsWith("rgb"))
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            var parts = value.Replace("rgb(", "").Replace(")", "").Split(',');
+                            int r = int.Parse(parts[0]);
+                            int g = int.Parse(parts[1]);
+                            int b = int.Parse(parts[2]);
+                            Control.BackColor = Color.FromArgb(r, g, b);
+                        }
+                        else if (value == "red")
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            Control.BackColor = Color.FromArgb(255, 255, 0, 0);
+                        }
+                        else if (value == "green")
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            Control.BackColor = Color.FromArgb(255, 0, 255, 0);
+                        }
+                        else if (value == "blur")
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            Control.BackColor = Color.FromArgb(255, 0, 0, 255);
+                        }
+                        else if (value == "gray")
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            Control.BackColor = Color.FromArgb(255, 150, 150, 150);
+                        }
+                        else if (value == "yellow")
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            Control.BackColor = Color.FromArgb(255, 0, 255, 255);
+                        }
+                        else
+                        {
+                            Control.Paint -= Control_Paint_Gradient;
+                            Control.Tag = null;
+                            Control.BackColor = ColorTranslator.FromHtml(value);
+                        }
+                        break;
+                    case "color":
+                        if (value.StartsWith("rgba")) // copy O:
                         {
                             // extract the rgba values
                             var parts = value.Replace("rgba(", "").Replace(")", "").Split(',');
@@ -78,40 +192,70 @@ namespace GuiBackend {
                             int r = int.Parse(parts[0]);
                             int g = int.Parse(parts[1]);
                             int b = int.Parse(parts[2]);
-                            Control.BackColor = Color.FromArgb(r, g, b);
+                            Control.ForeColor = Color.FromArgb(255, r, g, b);
+                        }
+                        else if (value == "red")
+                        {
+                            Control.ForeColor = Color.FromArgb(255, 255, 0, 0);
+                        }
+                        else if (value == "green")
+                        {
+                            Control.ForeColor = Color.FromArgb(255, 0, 255, 0);
+                        }
+                        else if (value == "blur")
+                        {
+                            Control.ForeColor = Color.FromArgb(255, 0, 0, 255);
+                        }
+                        else if (value == "gray")
+                        {
+                            Control.ForeColor = Color.FromArgb(255, 150, 150, 150);
+                        }
+                        else if (value == "yellow")
+                        {
+                            Control.ForeColor = Color.FromArgb(255, 0, 255, 255);
                         }
                         else
                         {
-                            Control.BackColor = ColorTranslator.FromHtml(value);
+                            Control.ForeColor = ColorTranslator.FromHtml(value);
                         }
-                        break;
-                    case "color":
-                        if (value.StartsWith("rgba")) // copy O:
-                            {
-                                // extract the rgba values
-                                var parts = value.Replace("rgba(", "").Replace(")", "").Split(',');
-                                int r = int.Parse(parts[0]);
-                                int g = int.Parse(parts[1]);
-                                int b = int.Parse(parts[2]);
-                                float alpha = float.Parse(parts[3], CultureInfo.InvariantCulture); // 0.0 to 1.0
-                                int a = (int)(alpha * 255); // convert to 0-255
-                                Control.BackColor = Color.FromArgb(a, r, g, b);
-                            }
-                            else if (value.StartsWith("rgb"))
-                            {
-                                var parts = value.Replace("rgb(", "").Replace(")", "").Split(',');
-                                int r = int.Parse(parts[0]);
-                                int g = int.Parse(parts[1]);
-                                int b = int.Parse(parts[2]);
-                                Control.ForeColor = Color.FromArgb(255, r, g, b);
-                            }
-                            else
-                            {
-                                Control.ForeColor = ColorTranslator.FromHtml(value);
-                            }
                         break;
                     case "opacity":
                         // not supported for control, only for forms and shit
+                        break;
+                    case "shadow":
+                        if (int.TryParse(value.Replace("px", ""), out int shadowSize))
+                        {
+                            shadowSize = shadowSize + 5;
+                            if (Control.Parent == null)
+                                break;
+
+                            Control.Parent.Paint += (sender, e) =>
+                            {
+                                var g = e.Graphics;
+                                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                                Rectangle rect = new Rectangle(
+                                    Control.Left - shadowSize,
+                                    Control.Top - shadowSize,
+                                    Control.Width + shadowSize * 2,
+                                    Control.Height + shadowSize * 2
+                                );
+
+                                using (GraphicsPath path = new GraphicsPath())
+                                {
+                                    path.AddRectangle(rect);
+
+                                    using (PathGradientBrush brush = new PathGradientBrush(path))
+                                    {
+                                        brush.CenterColor = Color.FromArgb(70, 0, 0, 0);
+                                        brush.SurroundColors = new Color[] { Color.FromArgb(0, 0, 0, 0) };
+                                        g.FillRectangle(brush, rect);
+                                    }
+                                }
+                            };
+
+                            Control.Parent.Invalidate();
+                        }
                         break;
                     case "font-size":
                         var currentFont = Control.Font;
@@ -133,6 +277,24 @@ namespace GuiBackend {
                         else if (value.ToLower() == "normal")
                         {
                             Control.Font = new Font(Control.Font, FontStyle.Regular);
+                        }
+                        else if (value.ToLower() == "italic")
+                        {
+                            Control.Font = new Font(Control.Font, FontStyle.Italic);
+                        }
+                        break;
+                    case "font-style":
+                        if (value.ToLower() == "bold")
+                        {
+                            Control.Font = new Font(Control.Font, FontStyle.Bold);
+                        }
+                        else if (value.ToLower() == "normal")
+                        {
+                            Control.Font = new Font(Control.Font, FontStyle.Regular);
+                        }
+                        else if (value.ToLower() == "italic")
+                        {
+                            Control.Font = new Font(Control.Font, FontStyle.Italic);
                         }
                         break;
                     case "text-align":
@@ -174,6 +336,16 @@ namespace GuiBackend {
                             }
                             catch { }
                         };
+                        break;
+                    case "scale":
+                        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float scale))
+                        {
+                            Control.Scale(new SizeF(scale, scale));
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Invalid scale value: " + value);
+                        }
                         break;
                     case "border-radius":
                         if (int.TryParse(value.Replace("px", ""), out int radius))
@@ -234,10 +406,40 @@ namespace GuiBackend {
                             ApplyBackdropBlur(Control, val);
                         }
                         break;
-                    default:
-                        throw new ArgumentException("Unsupported style property: " + key);
                 }
             }
+        }
+
+        private class GradientData
+        {
+            public float Angle { get; set; }
+            public Color[] Colors { get; set; }
+        }
+
+        private void Control_Paint_Gradient(object sender, PaintEventArgs e)
+        {
+            var ctl = sender as Control;
+            if (ctl?.Tag is GradientData data && data.Colors.Length >= 2)
+            {
+                using (var brush = new System.Drawing.Drawing2D.LinearGradientBrush(
+                    ctl.ClientRectangle,
+                    data.Colors[0],
+                    data.Colors[data.Colors.Length - 1],
+                    data.Angle))
+                {
+                    e.Graphics.FillRectangle(brush, ctl.ClientRectangle);
+                }
+            }
+        }
+
+        public void SetEnabled(bool enabled)
+        {
+            Control.Enabled = enabled;
+        }
+
+        public bool IsEnabled()
+        {
+            return Control.Enabled;
         }
 
         public void SetPosition(int x, int y)
@@ -247,6 +449,16 @@ namespace GuiBackend {
                 Control.Left = x;
                 Control.Top = y;
             }
+        }
+
+        public void SetOnTextChanged(Action callback)
+        {
+            Control.TextChanged += (s, e) => callback();
+        }
+
+        public bool IsVisible()
+        {
+            return Control?.Visible ?? false;
         }
 
         public void SetSize(int width, int height)
@@ -333,6 +545,38 @@ namespace GuiBackend {
                     default:
                         throw new ArgumentException("Unsupported image alignment for button: " + mode);
                 }
+            }
+        }
+
+        public void SetPlaceholder(string text)
+        {
+            if (Control is TextBox textBox)
+            {
+                if (textBox.Tag as string == "placeholder_set") return;
+
+                textBox.Tag = "placeholder_set"; // prevent multiple hookups
+
+                Color defaultColor = textBox.ForeColor;
+                textBox.Text = text;
+                textBox.ForeColor = Color.Gray;
+
+                textBox.GotFocus += (s, e) =>
+                {
+                    if (textBox.Text == text)
+                    {
+                        textBox.Text = "";
+                        textBox.ForeColor = defaultColor;
+                    }
+                };
+
+                textBox.LostFocus += (s, e) =>
+                {
+                    if (string.IsNullOrWhiteSpace(textBox.Text))
+                    {
+                        textBox.Text = text;
+                        textBox.ForeColor = Color.Gray;
+                    }
+                };
             }
         }
 
@@ -437,6 +681,34 @@ namespace GuiBackend {
             {
                 button.Image = null;
             }
+        }
+
+        public bool IsChecked()
+        {
+            if (Control is CheckBox checkBox)
+                return checkBox.Checked;
+            else if (Control is RadioButton radioButton)
+                return radioButton.Checked;
+            return false;
+        }
+
+        public void SetCheck(bool check)
+        {
+            if (Control is CheckBox checkBox)
+                checkBox.Checked = check;
+            else if (Control is RadioButton radioButton)
+                radioButton.Checked = check;
+        }
+
+        public void SetOnChecked(Action callback)
+        {
+            if (callback == null)
+                throw new ArgumentNullException(nameof(callback));
+
+            if (Control is CheckBox checkBox)
+                checkBox.CheckedChanged += (s, e) => callback();
+            else if (Control is RadioButton radioButton)
+                radioButton.CheckedChanged += (s, e) => callback();
         }
 
         public void Hide()
